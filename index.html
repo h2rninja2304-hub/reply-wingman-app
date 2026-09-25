@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ReplyAI — Your Personal Reply Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    --bg-1: #150B1F;
+    --bg-2: #20102B;
+    --surface: #251432;
+    --surface-raised: #2F1A3E;
+    --surface-hover: #392249;
+    --text: #F5EEEE;
+    --text-muted: #B4A2BC;
+    --border: #3D2750;
+    --danger: #FF8A80;
+    --shadow: 0 24px 60px -24px rgba(0,0,0,0.6);
+
+    /* brand mark gradient (fixed identity, independent of tone) */
+    --brand-a: #FF6B81;
+    --brand-b: #FFC857;
+
+    /* tone accents - color-coded per reply style */
+    --tone-pickup: #FFC857;   --tone-pickup-ink: #2A1C00;
+    --tone-flirty: #FF6B81;   --tone-flirty-ink: #2E0713;
+    --tone-bold:   #E63971;   --tone-bold-ink:   #FFFFFF;
+    --tone-casual: #5EEAD4;   --tone-casual-ink: #04302B;
+    --tone-pro:    #7C9CFF;   --tone-pro-ink:    #0C1440;
+
+    --tone-accent: var(--tone-flirty);
+    --tone-ink: var(--tone-flirty-ink);
+
+    --font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg-1: #FDF6F2; --bg-2: #FBEDE6;
+      --surface: #FFFFFF; --surface-raised: #F6EAE3; --surface-hover: #EEDCD1;
+      --text: #251421; --text-muted: #6E5C69; --border: #E9D9D0;
+      --danger: #C4432E; --shadow: 0 18px 40px -22px rgba(80,40,40,0.22);
+      --tone-pickup-ink: #2A1C00; --tone-flirty-ink: #FFFFFF; --tone-bold-ink: #FFFFFF;
+      --tone-casual-ink: #04302B; --tone-pro-ink: #FFFFFF;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg-1: #FDF6F2; --bg-2: #FBEDE6;
+    --surface: #FFFFFF; --surface-raised: #F6EAE3; --surface-hover: #EEDCD1;
+    --text: #251421; --text-muted: #6E5C69; --border: #E9D9D0;
+    --danger: #C4432E; --shadow: 0 18px 40px -22px rgba(80,40,40,0.22);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    background: var(--bg-1);
+  }
+
+  body {
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0 16px 64px;
+    background:
+      radial-gradient(680px 340px at 50% -60px, color-mix(in srgb, var(--tone-accent) 20%, transparent), transparent 70%),
+      linear-gradient(180deg, var(--bg-2), var(--bg-1) 340px);
+    transition: background .35s ease;
+  }
+
+  main { width: 100%; max-width: 580px; padding-top: 40px; }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 6px;
+  }
+
+  .mark {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-weight: 700; font-size: 19px;
+    color: #2A0D08;
+    box-shadow: 0 10px 24px -10px rgba(255,107,129,0.55);
+  }
+
+  h1 {
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.015em;
+    margin: 0;
+    line-height: 1.05;
+  }
+
+  .tagline {
+    color: var(--text-muted);
+    font-size: 14.5px;
+    margin: 12px 0 26px;
+    line-height: 1.55;
+    max-width: 48ch;
+  }
+
+  section.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    margin: 0 0 11px;
+  }
+
+  .tone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .tone-chip {
+    appearance: none;
+    border: 1.5px solid var(--border);
+    background: var(--surface-raised);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 11px 10px;
+    border-radius: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease, color .15s ease;
+  }
+  .tone-chip .emoji { font-size: 16px; line-height: 1; }
+  .tone-chip:hover { background: var(--surface-hover); }
+  .tone-chip:active { transform: scale(0.97); }
+  .tone-chip[aria-pressed="true"] {
+    background: var(--chip-color);
+    border-color: var(--chip-color);
+    color: var(--chip-ink);
+  }
+
+  .tone-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 4px 2px 22px;
+    min-height: 20px;
+  }
+  .tone-desc strong { color: var(--tone-accent); font-weight: 700; }
+
+  textarea {
+    width: 100%;
+    min-height: 118px;
+    resize: vertical;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 13px 14px;
+  }
+  textarea::placeholder { color: var(--text-muted); }
+  textarea:focus-visible, .tone-chip:focus-visible, button:focus-visible, .dropzone:focus-visible {
+    outline: 2px solid var(--tone-accent);
+    outline-offset: 2px;
+  }
+
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-muted); font-size: 12.5px; margin: 16px 0;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 13px;
+    padding: 18px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: block;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .dropzone:hover { border-color: var(--tone-accent); background: var(--surface-raised); }
+  .dropzone.drag-over { border-color: var(--tone-accent); background: var(--surface-raised); }
+  .dropzone input[type="file"] { display: none; }
+
+  .shot-preview {
+    display: none; align-items: center; gap: 12px; margin-top: 12px;
+    background: var(--surface-raised); border: 1px solid var(--border);
+    border-radius: 13px; padding: 10px;
+  }
+  .shot-preview.show { display: flex; }
+  .shot-preview img { width: 52px; height: 52px; object-fit: cover; border-radius: 9px; flex-shrink: 0; }
+  .shot-preview .name { font-size: 13.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .shot-preview button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 4px 8px; }
+  .shot-preview button:hover { color: var(--danger); }
+
+  .count-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+  .count-row .field-label { margin: 0; }
+
+  .stepper {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-raised); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px 6px;
+  }
+  .stepper button {
+    width: 26px; height: 26px; border-radius: 50%; border: none;
+    background: var(--surface-hover); color: var(--text); font-size: 15px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .stepper span { min-width: 14px; text-align: center; font-size: 14.5px; font-weight: 600; }
+
+  .cta {
+    width: 100%; margin-top: 22px;
+    background: var(--tone-accent);
+    color: var(--tone-ink);
+    border: none; border-radius: 13px; padding: 15px;
+    font-family: var(--font-body); font-weight: 700; font-size: 15.5px;
+    cursor: pointer;
+    transition: opacity .15s ease, transform .1s ease, background .25s ease;
+    box-shadow: 0 14px 28px -14px color-mix(in srgb, var(--tone-accent) 70%, transparent);
+  }
+  .cta:hover { opacity: 0.92; transform: translateY(-1px); }
+  .cta:active { transform: scale(0.99); }
+  .cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  .hint { font-size: 12.5px; color: var(--text-muted); text-align: center; margin-top: 10px; min-height: 16px; }
+
+  .results-head { display: flex; align-items: baseline; justify-content: space-between; margin: 28px 2px 14px; }
+  .results-head h2 { font-family: var(--font-head); font-size: 17.5px; font-weight: 600; margin: 0; }
+  .results-head .retry { background: none; border: none; color: var(--tone-accent); font-weight: 700; font-size: 13.5px; cursor: pointer; padding: 4px; }
+  .results-head .retry:hover { text-decoration: underline; }
+  .results-head .retry:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }
+
+  .replies { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+
+  .bubble {
+    max-width: 88%;
+    background: var(--tone-accent);
+    color: var(--tone-ink);
+    padding: 13px 16px;
+    border-radius: 18px 18px 4px 18px;
+    font-size: 15px;
+    line-height: 1.45;
+    position: relative;
+    animation: pop .25s ease both;
+    box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--tone-accent) 80%, transparent);
+  }
+  .bubble .copy-btn {
+    display: block; margin-top: 9px;
+    background: rgba(0,0,0,0.15); border: none; color: inherit;
+    font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px;
+    cursor: pointer; float: right;
+  }
+  .bubble .copy-btn:hover { background: rgba(0,0,0,0.26); }
+  .bubble .copy-btn.copied { background: rgba(0,0,0,0.32); }
+
+  @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .thinking { display: flex; justify-content: flex-end; }
+  .thinking .bubble-loading {
+    background: var(--surface-raised); border: 1px solid var(--border);
+    padding: 13px 17px; border-radius: 18px 18px 4px 18px; display: flex; gap: 4px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.1s infinite ease-in-out; }
+  .dot:nth-child(2) { animation-delay: 0.15s; }
+  .dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  .error-box {
+    background: var(--surface-raised); border: 1px solid var(--danger); color: var(--danger);
+    border-radius: 13px; padding: 12px 14px; font-size: 13.5px; margin-top: 14px;
+  }
+
+  .unavailable { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 14.5px; line-height: 1.6; }
+  .unavailable strong { color: var(--text); display: block; margin-bottom: 6px; font-family: var(--font-head); font-size: 18px; }
+
+  footer.note { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 30px; }
+
+  @media (max-width: 380px) {
+    h1 { font-size: 23px; }
+    .bubble { max-width: 94%; }
+    .tone-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<style id="premium-redesign">
+/* =========================================================
+   ReplyAI — Premium frontend layer
+   Keeps the existing functionality/IDs intact.
+   ========================================================= */
+:root {
+  --bg-1: #090A0F;
+  --bg-2: #0E1018;
+  --surface: rgba(18, 20, 30, 0.82);
+  --surface-raised: #151824;
+  --surface-hover: #1B1F2D;
+  --text: #F6F7FB;
+  --text-muted: #9197AA;
+  --border: rgba(255,255,255,.09);
+  --border-strong: rgba(255,255,255,.15);
+  --shadow: 0 30px 80px rgba(0,0,0,.32);
+  --brand-a: #9C7BFF;
+  --brand-b: #E8B6FF;
+  --tone-accent: #9C7BFF;
+  --tone-ink: #FFFFFF;
+}
+
+html, body {
+  min-height: 100%;
+  background: #090A0F;
+}
+
+body {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(800px 500px at 50% -180px, rgba(156,123,255,.16), transparent 70%),
+    radial-gradient(500px 420px at 95% 45%, rgba(112,82,255,.07), transparent 72%),
+    #090A0F;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+}
+body::before {
+  width: 420px;
+  height: 420px;
+  left: -220px;
+  top: 35%;
+  border-radius: 50%;
+  background: rgba(156,123,255,.055);
+  filter: blur(80px);
+}
+body::after {
+  width: 360px;
+  height: 360px;
+  right: -190px;
+  top: 12%;
+  border-radius: 50%;
+  background: rgba(230,160,255,.045);
+  filter: blur(80px);
+}
+
+main {
+  width: min(100% - 32px, 900px);
+  max-width: 900px;
+  padding: 42px 0 58px;
+  margin: 0 auto;
+}
+
+#app {
+  width: 100%;
+}
+
+header.top {
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #A98AFF, #E7B5FF);
+  color: #17101F;
+  box-shadow: 0 12px 34px rgba(156,123,255,.24);
+  font-size: 21px;
+}
+
+.brand-copy {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+h1 {
+  font-size: 24px;
+  letter-spacing: -.035em;
+  font-weight: 700;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.035);
+  color: #A9AEC0;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.status-pill i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6EE7B7;
+  box-shadow: 0 0 10px rgba(110,231,183,.7);
+}
+
+.tagline {
+  max-width: 610px;
+  margin: 9px 0 30px 60px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #858B9D;
+}
+
+section.card {
+  background: linear-gradient(180deg, rgba(20,22,33,.92), rgba(15,17,25,.92));
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 27px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 13px;
+}
+.section-heading .field-label {
+  margin: 0;
+}
+.eyebrow {
+  color: #6F7588;
+  font-size: 9px;
+  letter-spacing: .16em;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+.live-label {
+  color: #73798C;
+  font-size: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 8px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.field-label {
+  color: #D5D8E2;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.tone-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 11px;
+}
+
+.tone-chip {
+  min-height: 47px;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,.075);
+  background: #131621;
+  color: #BFC3CF;
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 9px;
+}
+.tone-chip .emoji {
+  font-size: 13px;
+  opacity: .9;
+}
+.tone-chip:hover {
+  background: #1A1E2B;
+  border-color: rgba(255,255,255,.13);
+  transform: translateY(-1px);
+}
+.tone-chip[aria-pressed="true"] {
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--chip-color) 20%, transparent);
+}
+
+.tone-desc {
+  margin: 8px 2px 24px;
+  color: #777D90;
+  font-size: 12px;
+}
+.tone-desc strong {
+  color: #B9A8FF;
+}
+
+.input-heading {
+  margin-bottom: 10px;
+}
+
+textarea {
+  min-height: 145px;
+  background: #0F121A;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 15px;
+  padding: 15px 16px;
+  font-size: 14px;
+  color: #F0F1F6;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+textarea:hover {
+  border-color: rgba(255,255,255,.13);
+}
+textarea:focus {
+  border-color: rgba(156,123,255,.55);
+  box-shadow: 0 0 0 4px rgba(156,123,255,.08);
+}
+
+.divider {
+  margin: 17px 0;
+  font-size: 9px;
+  letter-spacing: .16em;
+}
+.divider::before, .divider::after {
+  background: rgba(255,255,255,.07);
+}
+.divider span {
+  padding: 0 3px;
+}
+
+.dropzone {
+  border: 1px dashed rgba(255,255,255,.13);
+  background: rgba(255,255,255,.015);
+  border-radius: 15px;
+  padding: 20px 16px;
+  font-size: 12.5px;
+  transition: all .18s ease;
+}
+.dropzone:hover,
+.dropzone.drag-over {
+  background: rgba(156,123,255,.055);
+  border-color: rgba(156,123,255,.55);
+}
+.upload-icon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 8px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  line-height: 29px;
+  color: #B7A7FF;
+  font-size: 16px;
+}
+.dropzone b {
+  color: #B6A6FF;
+  font-weight: 650;
+}
+
+.shot-preview {
+  background: #11141D;
+  border-color: rgba(255,255,255,.08);
+}
+
+.count-row {
+  margin-top: 22px;
+}
+.stepper {
+  background: #11141D;
+  border-color: rgba(255,255,255,.08);
+}
+.stepper button {
+  background: #1B1F2B;
+}
+.stepper button:hover {
+  background: #252A39;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 20px;
+  min-height: 52px;
+  background: linear-gradient(135deg, #9677FF, #B98BFF);
+  color: #15101E;
+  border-radius: 14px;
+  box-shadow: 0 16px 35px rgba(127,91,255,.2);
+}
+.cta:hover {
+  opacity: 1;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.cta-arrow {
+  font-size: 17px;
+  transition: transform .18s ease;
+}
+.cta:hover .cta-arrow {
+  transform: translate(2px,-2px);
+}
+
+.hint {
+  color: #73798C;
+}
+
+.results-head {
+  margin: 30px 3px 13px;
+}
+.results-head h2 {
+  font-size: 16px;
+}
+.results-head .retry {
+  font-size: 12px;
+}
+
+.replies {
+  gap: 10px;
+}
+
+.bubble {
+  max-width: min(88%, 650px);
+  background: linear-gradient(135deg, #8E70F4, #A87EF5);
+  color: #FFF;
+  border-radius: 17px 17px 5px 17px;
+  padding: 14px 16px;
+  box-shadow: 0 13px 30px rgba(101,73,205,.17);
+  font-size: 14px;
+}
+.bubble .copy-btn {
+  background: rgba(0,0,0,.16);
+}
+.bubble .copy-btn:hover {
+  background: rgba(0,0,0,.25);
+}
+
+.thinking .bubble-loading {
+  background: #141722;
+  border-color: rgba(255,255,255,.08);
+}
+
+.error-box {
+  background: rgba(255,80,100,.06);
+  border-color: rgba(255,100,120,.35);
+}
+
+footer.note {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  font-size: 10.5px;
+  color: #666C7D;
+}
+
+@media (max-width: 700px) {
+  main {
+    width: min(100% - 24px, 580px);
+    padding-top: 25px;
+  }
+  .tagline {
+    margin-left: 0;
+    margin-bottom: 22px;
+  }
+  section.card {
+    padding: 19px;
+    border-radius: 20px;
+  }
+  .tone-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .brand-copy {
+    gap: 8px;
+  }
+  .status-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  main {
+    width: min(100% - 18px, 580px);
+  }
+  section.card {
+    padding: 16px;
+  }
+  .tone-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .bubble {
+    max-width: 94%;
+  }
+}
+</style>
+
+</head>
+<body>
+<main>
+
+  <div id="app">
+    <header class="top">
+      <div class="mark"><span>✦</span></div>
+      <div class="brand-copy"><h1>ReplyAI</h1><span class="status-pill"><i></i> Personal AI</span></div>
+    </header>
+    <p class="tagline">Turn any conversation into the right words. Upload a screenshot, paste the message, choose your vibe, and let AI do the rest.</p>
+
+    <section class="card">
+      <div class="section-heading"><div><p class="eyebrow">01</p><p class="field-label">Choose your vibe</p></div><span class="live-label">AI tone</span></div>
+      <div class="tone-grid" id="toneRow" role="group" aria-label="Reply style"></div>
+      <p class="tone-desc" id="toneDesc"></p>
+
+      <div class="section-heading input-heading"><div><p class="eyebrow">02</p><p class="field-label" id="convoLabel">Conversation</p></div></div>
+      <textarea id="convoText" placeholder="Paste the message thread here, e.g.&#10;Them: hey stranger, long time no text&#10;You: ..."></textarea>
+
+      <div class="divider"><span>OR</span></div>
+
+      <label class="dropzone" id="dropzone" tabindex="0">
+        <span class="upload-icon">↥</span><span id="dropzoneLabel">Drop a screenshot here or <b>browse files</b></span>
+        <input type="file" id="fileInput" accept="image/*">
+      </label>
+      <div class="shot-preview" id="shotPreview">
+        <img id="shotThumb" alt="Screenshot preview">
+        <span class="name" id="shotName"></span>
+        <button type="button" id="removeShot">Remove</button>
+      </div>
+
+      <div class="count-row">
+        <p class="field-label">Reply options</p>
+        <div class="stepper">
+          <button type="button" id="countDown" aria-label="Fewer replies">−</button>
+          <span id="countValue">4</span>
+          <button type="button" id="countUp" aria-label="More replies">+</button>
+        </div>
+      </div>
+
+      <button type="button" class="cta" id="generateBtn"><span>Generate replies</span><span class="cta-arrow">↗</span></button>
+      <p class="hint" id="hint">&nbsp;</p>
+      <div class="error-box" id="errorBox" style="display:none;"></div>
+    </section>
+
+    <div id="resultsSection" style="display:none;">
+      <div class="results-head">
+        <h2 id="resultsTitle">Suggested replies</h2>
+        <button type="button" class="retry" id="retryBtn">Try different replies</button>
+      </div>
+      <div class="replies" id="repliesList"></div>
+    </div>
+
+    <div class="thinking" id="thinkingRow" style="display:none;">
+      <div class="bubble-loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <footer class="note"><span>Private by design</span><span>•</span><span>AI-generated suggestions — review before sending</span></footer>
+</main>
+
+<script>
+(function () {
+  const TONES = [
+    {
+      id: "pickup",
+      label: "Pick-up line",
+      emoji: "💘",
+      color: "var(--tone-pickup)",
+      ink: "var(--tone-pickup-ink)",
+      desc: "Opening lines to break the ice — confident and witty, made to catch attention.",
+      promptDesc: "playful, witty pick-up lines or conversation openers — confident, original and charming, never crude, corny clichés, or offensive",
+      needsConvo: false,
+      convoLabel: "Context (optional)",
+      placeholder: "Optional — paste their bio, interests, or last message to personalize the opener…",
+      resultsTitle: "Suggested openers",
+      isOpener: true,
+    },
+    {
+      id: "flirty",
+      label: "Flirty & dating",
+      emoji: "😏",
+      color: "var(--tone-flirty)",
+      ink: "var(--tone-flirty-ink)",
+      desc: "Playful and confident — a fun match who keeps things exciting without trying too hard.",
+      promptDesc: "flirty, playful and confident — the tone of a charming, fun match who knows how to keep a conversation exciting without being cringey",
+      needsConvo: true,
+      convoLabel: "Conversation",
+      placeholder: "Paste the message thread here, e.g.\nThem: hey stranger, long time no text\nYou: ...",
+      resultsTitle: "Suggested replies",
+    },
+    {
+      id: "bold",
+      label: "Bold & spicy",
+      emoji: "🔥",
+      color: "var(--tone-bold)",
+      ink: "var(--tone-bold-ink)",
+      desc: "Turns up the heat — teasing and suggestive, still tasteful and respectful.",
+      promptDesc: "bolder and spicier than typical flirty texting — confident, teasing and suggestive in a playful way, while staying tasteful and respectful and avoiding anything explicit or crude",
+      needsConvo: true,
+      convoLabel: "Conversation",
+      placeholder: "Paste the message thread here…",
+      resultsTitle: "Suggested replies",
+    },
+    {
+      id: "casual",
+      label: "Casual",
+      emoji: "💬",
+      color: "var(--tone-casual)",
+      ink: "var(--tone-casual-ink)",
+      desc: "Easygoing and natural — how you'd text a friend.",
+      promptDesc: "casual, warm and relaxed — the tone you'd use texting a friend, easygoing and natural",
+      needsConvo: true,
+      convoLabel: "Conversation",
+      placeholder: "Paste the message thread here…",
+      resultsTitle: "Suggested replies",
+    },
+    {
+      id: "professional",
+      label: "Professional",
+      emoji: "🧳",
+      color: "var(--tone-pro)",
+      ink: "var(--tone-pro-ink)",
+      desc: "Clear and polite — right for work or formal messages.",
+      promptDesc: "polite, clear and professional — concise and appropriate for a work or formal messaging context",
+      needsConvo: true,
+      convoLabel: "Conversation",
+      placeholder: "Paste the message thread here…",
+      resultsTitle: "Suggested replies",
+    },
+    {
+      id: "romantic",
+      label: "Romantic",
+      emoji: "♥",
+      color: "#D8A7FF",
+      ink: "#24112F",
+      desc: "Warm and affectionate — genuine without sounding overly dramatic.",
+      promptDesc: "romantic, warm and affectionate — sincere, natural and emotionally thoughtful without sounding overly dramatic",
+      needsConvo: true,
+      convoLabel: "Conversation",
+      placeholder: "Paste the message thread here…",
+      resultsTitle: "Romantic replies",
+    },
+    {
+      id: "funny",
+      label: "Funny",
+      emoji: "✦",
+      color: "#8DE7D4",
+      ink: "#092A24",
+      desc: "Light, witty and playful — made to keep the conversation fun.",
+      promptDesc: "funny, witty and playful — natural humor that fits the conversation without forcing a joke",
+      needsConvo: true,
+      convoLabel: "Conversation",
+      placeholder: "Paste the message thread here…",
+      resultsTitle: "Funny replies",
+    },
+  ];
+
+  const state = {
+    toneId: "flirty",
+    count: 4,
+    imageBlob: null,
+    sample: null,
+    imagesAllowed: false,
+  };
+
+  function currentTone() { return TONES.find(t => t.id === state.toneId); }
+
+  const els = {
+    toneRow: document.getElementById("toneRow"),
+    toneDesc: document.getElementById("toneDesc"),
+    convoLabel: document.getElementById("convoLabel"),
+    convoText: document.getElementById("convoText"),
+    dropzone: document.getElementById("dropzone"),
+    dropzoneLabel: document.getElementById("dropzoneLabel"),
+    fileInput: document.getElementById("fileInput"),
+    shotPreview: document.getElementById("shotPreview"),
+    shotThumb: document.getElementById("shotThumb"),
+    shotName: document.getElementById("shotName"),
+    removeShot: document.getElementById("removeShot"),
+    countValue: document.getElementById("countValue"),
+    countDown: document.getElementById("countDown"),
+    countUp: document.getElementById("countUp"),
+    generateBtn: document.getElementById("generateBtn"),
+    hint: document.getElementById("hint"),
+    errorBox: document.getElementById("errorBox"),
+    resultsSection: document.getElementById("resultsSection"),
+    resultsTitle: document.getElementById("resultsTitle"),
+    repliesList: document.getElementById("repliesList"),
+    retryBtn: document.getElementById("retryBtn"),
+    thinkingRow: document.getElementById("thinkingRow"),
+    app: document.getElementById("app"),
+  };
+
+  // ---------- Build tone chips ----------
+  function buildToneChips() {
+    els.toneRow.innerHTML = "";
+    TONES.forEach(t => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tone-chip";
+      btn.dataset.tone = t.id;
+      btn.style.setProperty("--chip-color", t.color);
+      btn.style.setProperty("--chip-ink", t.ink);
+      btn.setAttribute("aria-pressed", t.id === state.toneId ? "true" : "false");
+      btn.innerHTML = '<span class="emoji">' + t.emoji + '</span><span>' + t.label + '</span>';
+      btn.addEventListener("click", () => selectTone(t.id));
+      els.toneRow.appendChild(btn);
+    });
+  }
+
+  function selectTone(id) {
+    state.toneId = id;
+    const t = currentTone();
+    [...els.toneRow.children].forEach(c => c.setAttribute("aria-pressed", c.dataset.tone === id ? "true" : "false"));
+    document.documentElement.style.setProperty("--tone-accent", t.color);
+    document.documentElement.style.setProperty("--tone-ink", t.ink);
+    els.toneDesc.innerHTML = '<strong>' + t.label + '</strong> — ' + t.desc;
+    els.convoLabel.textContent = t.convoLabel;
+    els.convoText.placeholder = t.placeholder;
+    els.resultsTitle.textContent = t.resultsTitle;
+    els.generateBtn.textContent = t.isOpener ? "Get openers" : "Get replies";
+    els.retryBtn.textContent = t.isOpener ? "Try different openers" : "Try different replies";
+  }
+
+  buildToneChips();
+  selectTone(state.toneId);
+
+  // ---------- Reply count stepper ----------
+  function renderCount() { els.countValue.textContent = state.count; els.countDown.disabled = state.count <= 2; els.countUp.disabled = state.count >= 6; }
+  els.countDown.addEventListener("click", () => { if (state.count > 2) { state.count--; renderCount(); } });
+  els.countUp.addEventListener("click", () => { if (state.count < 6) { state.count++; renderCount(); } });
+  renderCount();
+
+  // ---------- Screenshot upload ----------
+  function setImage(file) {
+    if (!file) return;
+    state.imageBlob = file;
+    const url = URL.createObjectURL(file);
+    els.shotThumb.src = url;
+    els.shotName.textContent = file.name || "Screenshot";
+    els.shotPreview.classList.add("show");
+    els.dropzoneLabel.textContent = "📷 Screenshot added — click to replace";
+  }
+  function clearImage() {
+    state.imageBlob = null;
+    els.fileInput.value = "";
+    els.shotPreview.classList.remove("show");
+    els.dropzoneLabel.textContent = "📷 Add a screenshot of the conversation";
+  }
+  els.dropzone.addEventListener("click", () => els.fileInput.click());
+  els.dropzone.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); els.fileInput.click(); } });
+  els.fileInput.addEventListener("change", (e) => setImage(e.target.files[0]));
+  els.removeShot.addEventListener("click", (e) => { e.stopPropagation(); clearImage(); });
+  ["dragenter", "dragover"].forEach(ev => els.dropzone.addEventListener(ev, (e) => { e.preventDefault(); els.dropzone.classList.add("drag-over"); }));
+  ["dragleave", "drop"].forEach(ev => els.dropzone.addEventListener(ev, (e) => { e.preventDefault(); els.dropzone.classList.remove("drag-over"); }));
+  els.dropzone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f && f.type.startsWith("image/")) setImage(f); });
+
+  // ---------- Errors ----------
+  function showError(msg) { els.errorBox.style.display = "block"; els.errorBox.textContent = msg; }
+  function clearError() { els.errorBox.style.display = "none"; els.errorBox.textContent = ""; }
+
+  function copyForCode(code) {
+    switch (code) {
+      case "missing_key": return "The server isn't configured with an API key yet. Set ANTHROPIC_API_KEY in your hosting dashboard.";
+      case "image_rejected": return "That image couldn't be used — try a smaller screenshot or a different file.";
+      case "rate_limited": return "Too many requests right now — wait a moment and try again.";
+      case "refused": return "That request couldn't be completed — try rephrasing or using different text.";
+      case "prompt_too_large": return "That conversation is too long — try trimming it down.";
+      case "empty_completion": return "No reply came back — try again with a bit more context.";
+      case "network": return "Couldn't reach the server — check your connection and try again.";
+      default: return "Something went wrong generating replies. Please try again.";
+    }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = () => reject(new Error("read_failed"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // ---------- Build prompt ----------
+  function buildPrompt() {
+    const t = currentTone();
+    const convo = els.convoText.value.trim();
+    const lines = [];
+    lines.push('You are a witty, emotionally intelligent texting assistant.');
+    lines.push('Desired tone: ' + t.promptDesc + '.');
+
+    if (t.isOpener) {
+      lines.push('The user wants opening lines to start a chat with someone new (e.g. on a dating app), not a reply to an existing conversation.');
+      if (convo) lines.push('Optional context about the person to personalize the lines:\n"""\n' + convo + '\n"""');
+      if (state.imageBlob) lines.push('An optional screenshot (e.g. of their profile) is attached for extra context.');
+      lines.push('Write ' + state.count + ' distinct opening lines the user could send first. Each should be short (1-2 sentences), original, and clearly different in angle or energy from the others while matching the tone.');
+    } else {
+      if (convo) lines.push('Here is the conversation so far (most recent message last):\n"""\n' + convo + '\n"""');
+      if (state.imageBlob) lines.push('A screenshot of the conversation is attached — read the messages in it for context (combine with any pasted text above if present).');
+      lines.push('Write ' + state.count + ' distinct reply options the user could send next. Each should be short (1-2 sentences), natural, ready to send as-is, and clearly different from the others in angle or energy while matching the tone.');
+    }
+    lines.push('Reply with ONLY a JSON array of ' + state.count + ' strings, each one full message. No commentary, no markdown, no numbering.');
+    return lines.join("\n\n");
+  }
+
+  // ---------- Rendering results ----------
+  function renderReplies(list) {
+    els.repliesList.innerHTML = "";
+    list.forEach((text) => {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      const span = document.createElement("div");
+      span.textContent = text;
+      bubble.appendChild(span);
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "copy-btn";
+      copyBtn.textContent = "Copy";
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          copyBtn.textContent = "Copied";
+          copyBtn.classList.add("copied");
+          setTimeout(() => { copyBtn.textContent = "Copy"; copyBtn.classList.remove("copied"); }, 1600);
+        } catch (e) {
+          copyBtn.textContent = "Select & copy";
+        }
+      });
+      bubble.appendChild(copyBtn);
+      els.repliesList.appendChild(bubble);
+    });
+    els.resultsSection.style.display = "block";
+  }
+
+  // ---------- Generate ----------
+  async function generate() {
+    clearError();
+    const t = currentTone();
+    const convo = els.convoText.value.trim();
+    if (t.needsConvo && !convo && !state.imageBlob) {
+      showError("Paste some text or add a screenshot first.");
+      return;
+    }
+    els.generateBtn.disabled = true;
+    els.retryBtn.disabled = true;
+    els.thinkingRow.style.display = "flex";
+    els.hint.textContent = "Thinking…";
+
+    try {
+      let imagePayload = null;
+      if (state.imageBlob) {
+        imagePayload = { mediaType: state.imageBlob.type || "image/jpeg", data: await blobToBase64(state.imageBlob) };
+      }
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: buildPrompt(), image: imagePayload }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw { code: body.code || "upstream_error" };
+
+      let list = Array.isArray(body.replies) ? body.replies : null;
+      if (!list) throw { code: "invalid_json" };
+      list = list.filter(x => typeof x === "string" && x.trim()).slice(0, state.count);
+      if (!list.length) throw { code: "empty_completion" };
+
+      renderReplies(list);
+      els.hint.textContent = "";
+    } catch (e) {
+      const code = (e && e.code) ? e.code : "network";
+      showError(copyForCode(code));
+      els.hint.textContent = "";
+    } finally {
+      els.generateBtn.disabled = false;
+      els.retryBtn.disabled = false;
+      els.thinkingRow.style.display = "none";
+    }
+  }
+
+  els.generateBtn.addEventListener("click", generate);
+  els.retryBtn.addEventListener("click", generate);
+})();
+</script>
+</body>
+</html>
