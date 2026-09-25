@@ -2,7 +2,7 @@
 // Body: { prompt: string, image: { mediaType: string, data: base64string } | null }
 // Uses Google's Gemini API (free tier) — the key stays on the server, never sent to the browser.
 
-const MODEL = "gemini-3.5-flash-lite"; // current free-tier model
+const MODEL = "gemini-2.5-flash-lite"; // free-tier model; swap here if Google renames/updates it
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
